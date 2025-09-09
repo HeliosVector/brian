@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{{ 'Edit Member' if person else 'Add New Member' }}</title>
+    <title>{{ 'Edit Sale' if sale else 'Add New Sale' }}</title>
     <style>
       body {
         font-family: "Poppins", Arial, sans-serif;
         background: linear-gradient(135deg, #ffecd2, #fcb69f);
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
         min-height: 100vh;
         margin: 0;
+        padding: 20px;
       }
 
       .container {
@@ -21,6 +22,50 @@
         max-width: 450px;
         width: 100%;
         text-align: center;
+        margin-top: 20px;
+      }
+
+      .table-container {
+        background: #fff;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        width: 100%;
+        margin-bottom: 20px;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: black;
+        color: white;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .table th,
+      .table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #444;
+      }
+
+      .table th {
+        background: #333;
+      }
+
+      .table tr {
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .table tr:hover {
+        background: #555;
+      }
+
+      .table tr.selected {
+        background: #ff7e5f;
       }
 
       h2 {
@@ -105,59 +150,111 @@
     </style>
   </head>
   <body>
-   <div class="container">
-    <h2>{{ button_text if button_text else 'Add Sale' }}</h2>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul>
-        {% for category, message in messages %}
-            <li style="color: {{ 'red' if category == 'danger' else 'green' }}">{{ message }}</li>
+    <div class="table-container">
+      <h2>Available Products</h2>
+      <table class="table">
+        <tr>
+          <th>Item ID</th>
+          <th>Item Name</th>
+          <th>Quantity Available</th>
+          <th>Selling Price</th>
+        </tr>
+        {% for p in products %}
+        <tr
+          onclick="selectProduct('{{ p.item_id }}', '{{ p.item_name }}', '{{ p.selling_price }}')"
+        >
+          <td>{{ p.item_id }}</td>
+          <td>{{ p.item_name }}</td>
+          <td>{{ p.quantity }}</td>
+          <td>{{ p.selling_price }}</td>
+        </tr>
         {% endfor %}
-        </ul>
-    {% endif %}
-    {% endwith %}
+      </table>
+    </div>
 
-    <form action="{{ form_action }}" method="POST">
-      <input
-        type="number"
-        placeholder="Product ID"
-        name="item_id"
-        required
-        value="{{ sale.item_id if sale else '' }}"
-      /><br />
+    <div class="container">
+      <h2>{{ button_text if button_text else 'Add Sale' }}</h2>
 
-      <input
-        type="number"
-        placeholder="Quantity"
-        name="quantity"
-        min="1"
-        required
-        value="{{ sale.quantity if sale else '' }}"
-      /><br />
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <ul>
+        {% for category, message in messages %}
+        <li style="color: {{ 'red' if category == 'danger' else 'green' }}">
+          {{ message }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% endwith %}
 
-      <input
-        type="number"
-        step="0.01"
-        placeholder="Selling Price"
-        name="selling_price"
-        required
-        value="{{ sale.selling_price if sale else '' }}"
-      /><br />
+      <form action="{{ form_action }}" method="POST">
+        <label for="item_id">Product ID</label>
+        <input
+          type="number"
+          id="item_id"
+          name="item_id"
+          required
+          readonly
+          value="{{ sale.item_id if sale else '' }}"
+        />
 
-      <input
-        type="text"
-        placeholder="Payment Method"
-        name="payment"
-        required
-        value="{{ sale.payment if sale else '' }}"
-      /><br />
+        <label for="item_name">Product Name (Reference)</label>
+        <input
+          type="text"
+          id="item_name"
+          readonly
+          value="{{ sale.name if sale else '' }}"
+        />
 
-      <button type="submit">{{ button_text if button_text else 'Record Sale' }}</button>
-    </form>
+        <label for="quantity">Quantity</label>
+        <input
+          type="number"
+          id="quantity"
+          name="quantity"
+          min="1"
+          required
+          value="{{ sale.quantity if sale else '' }}"
+        />
 
-    <a href="/dashboard_sales">← Back to Sales Dashboard</a>
-</div>
+        <label for="selling_price">Selling Price</label>
+        <input
+          type="number"
+          step="0.01"
+          id="selling_price"
+          name="selling_price"
+          required
+          readonly
+          value="{{ sale.selling_price if sale else '' }}"
+        />
 
-      
+        <label for="payment">Payment Method</label>
+        <input
+          type="text"
+          id="payment"
+          name="payment"
+          required
+          value="{{ sale.payment if sale else '' }}"
+        />
+
+        <button type="submit">
+          {{ button_text if button_text else 'Record Sale' }}
+        </button>
+      </form>
+
+      <a href="/dashboard_sales">← Back to Sales Dashboard</a>
+    </div>
+
+    <script>
+      function selectProduct(id, name, price) {
+        // Update form fields
+        document.getElementById("item_id").value = id;
+        document.getElementById("item_name").value = name;
+        document.getElementById("selling_price").value = price;
+
+        // Highlight selected row
+        const rows = document.querySelectorAll(".table tr");
+        rows.forEach((row) => row.classList.remove("selected"));
+        event.currentTarget.classList.add("selected");
+      }
+    </script>
+  </body>
 </html>

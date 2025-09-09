@@ -261,6 +261,8 @@ app.secret_key = 'supersecret'
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
+    if "username" not in session:
+        return redirect(url_for('normal_user'))
     import re
 
     def normalize_kenyan_number(number):
@@ -746,6 +748,7 @@ def edit_user(user_id):
     conn = get_connection()
     c = conn.cursor()
 
+
     # Fetch user info to pre-fill form
     c.execute('SELECT username, email, phone, profile_photo FROM users WHERE id = %s', (user_id,))
     user = c.fetchone()
@@ -819,6 +822,8 @@ def delete_user(user_id):
 @app.route('/add_damagedinfo', methods=['GET', 'POST'])
 def add_damagedinfo():
     conn = None
+    if "username" not in session:
+        return redirect(url_for("normal_user"))
     try:
         conn = get_connection()
         c = conn.cursor()
@@ -1130,7 +1135,10 @@ def payrolls():
     return render_template('payrolls.html')
 @app.route('/')
 def index():
-    return redirect('/login')
+    return redirect(url_for('login'))
+
+
+
 from flask import Flask, request, redirect, url_for, render_template, session, flash
 from werkzeug.security import check_password_hash
 
@@ -1896,12 +1904,27 @@ def dashboard_sales():
 #navigate from sales.html to record_sales.html
 
 
+from flask import Blueprint, request, flash, redirect, url_for, render_template
+
 @app.route('/record_sales', methods=["GET", "POST"])
 def record_sales():
+    # Fetch products for both GET and POST to ensure template has data
+    conn = get_connection()
+    cur = conn.cursor()  # Use dictionary cursor for easier access
+    try:
+        cur.execute('SELECT item_id, item_name, quantity, selling_price FROM stock_info ORDER BY item_id')
+        products = cur.fetchall()  # Fetch all products as a list of dictionaries
+    except Exception as e:
+        flash(f"❌ Error fetching products: {str(e)}", "danger")
+        print(f"Error fetching products: {str(e)}")
+        products = []
+    finally:
+        cur.close()
+        conn.close()
+
     if request.method == "POST":
         conn = get_connection()
-        cur = conn.cursor() # type: ignore
-
+        cur = conn.cursor()  # Use dictionary cursor
         try:
             # Convert form inputs
             try:
@@ -1910,45 +1933,49 @@ def record_sales():
                 selling_price = float(request.form['selling_price'])
             except ValueError:
                 flash("❌ Please enter valid numeric values", "danger")
-                return redirect(url_for('record_sales'))
+                return render_template('record_sales.html', 
+                                    form_action=url_for('record_sales'),
+                                    sale=None,
+                                    products=products,
+                                    button_text='Record Sale')
 
             payment_method = request.form['payment']
 
             # Fetch product
-            cur.execute("SELECT item_name, quantity, buying_price FROM stock_info WHERE item_id = %s", (item_id,))
+            cur.execute("SELECT item_id, item_name, quantity, selling_price FROM stock_info WHERE item_id = %s", (item_id,))
             item = cur.fetchone()
 
             if not item:
                 flash("❌ Product with that ID does not exist.", "danger")
-                return redirect(url_for('record_sales'))
+                return render_template('record_sales.html', 
+                                    form_action=url_for('record_sales'),
+                                    sale=None,
+                                    products=products,
+                                    button_text='Record Sale')
+            it = item['item_id'], # type: ignore 
             name = item['item_name'] # type: ignore
-            stock_qty = int(float(item['quantity'])) # type: ignore # type: ignore))
-            buying_price = item['buying_price'] # type: ignore
+            stock_qty = int(item['quantity']) if item['quantity'] is not None else 0 # type: ignore
+            buying_price = float(item['buying_price']) if item['buying_price'] is not None else 0.0 # type: ignore
 
-            try:
-                
-                # Debug: Print raw values before conversion
-                print(f"Raw values - stock_qty: {stock_qty} (type: {type(stock_qty)}), buying_price: {buying_price} (type: {type(buying_price)})")
-                # Convert quantities
-                stock_quntity = stock_qty if stock_qty not in [None, ''] else 0
-                buying_price = float(buying_price) if buying_price not in [None, ''] else 0.0
-                
-                # Debug: Print converted values
-                print(f"Converted - stock_qty: {stock_quntity}, buying_price: {buying_price}")
-                
-            except (ValueError, TypeError) as e:
-                flash(f"❌ Database contains invalid values. Error: {str(e)}", "danger")
-                print(f"Conversion error. Raw values: stock_qty={stock_qty}, buying_price={buying_price}")
-                return redirect(url_for('record_sales'))
+            # Debug: Print values
+            print(f"Item: {name}, Stock Qty: {stock_qty}, Buying Price: {buying_price}")
 
             # Validate quantities
             if stock_qty <= 0:
                 flash("❌ Product is out of stock", "danger")
-                return redirect(url_for('record_sales'))
+                return render_template('record_sales.html', 
+                                    form_action=url_for('record_sales'),
+                                    sale=None,
+                                    products=products,
+                                    button_text='Record Sale')
 
             if quantity_sold > stock_qty:
                 flash("❌ Quantity exceeds stock available.", "danger")
-                return redirect(url_for('record_sales'))
+                return render_template('record_sales.html', 
+                                    form_action=url_for('record_sales'),
+                                    sale=None,
+                                    products=products,
+                                    button_text='Record Sale')
 
             # Calculate values
             total_selling = selling_price * quantity_sold
@@ -1967,22 +1994,26 @@ def record_sales():
             cur.execute("UPDATE stock_info SET quantity = %s WHERE item_id = %s", (new_qty, item_id))
 
             conn.commit()
-            
-
-
+            flash("✅ Sale recorded successfully!", "success")
             return redirect('/dashboard_sales')
 
         except Exception as e:
             conn.rollback()
             flash(f"❌ Error processing sale: {str(e)}", "danger")
             print(f"Unexpected error: {str(e)}")
-            return redirect(url_for('record_sales'))
+            return render_template('record_sales.html', 
+                                form_action=url_for('record_sales'),
+                                sale=None,
+                                products=products,
+                                button_text='Record Sale')
         finally:
+            cur.close()
             conn.close()
 
     return render_template('record_sales.html', 
                          form_action=url_for('record_sales'),
                          sale=None,
+                         products=products,
                          button_text='Record Sale')
 
 
@@ -2782,6 +2813,7 @@ def delete_contract(id):
 def dashboard():
     conn = get_connection()
     cur = conn.cursor()
+    us = session.get("username")
 
     cur.execute("SELECT username, email, phone, profile_photo FROM users WHERE username = %s", (session.get('username'),))
     user_data = cur.fetchone()  # Type hint to tell Pylance it's a dict or None
@@ -2789,7 +2821,7 @@ def dashboard():
 
 
 
-    return render_template('dashboard.html', username=session.get('username', 'Guest'), user=user_data)
+    return render_template('dashboard.html', username=session.get('username', 'Guest'), user=user_data, us=us)
 
 @app.route('/new_dashboard')
 def new_dashboard():
@@ -3040,6 +3072,7 @@ def edit_product(id):
     return render_template('add_product.html', form_action=url_for('edit_product', id=id), button_text='Update Product', product=product)
 #Create a user
 
+#display before sales
 
 # Optional: Logout route
 
