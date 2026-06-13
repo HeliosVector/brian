@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<<<<<<< HEAD
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -400,3 +401,764 @@
     </script>
   </body>
 </html>
+=======
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Dashboard | Clean View</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+    }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100%;
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      padding-top: 30px;
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .sidebar.hidden {
+      transform: translateX(-100%);
+    }
+
+    .sidebar.visible {
+      transform: translateX(0);
+    }
+
+    .sidebar h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 22px;
+      letter-spacing: 0;
+      font-weight: 600;
+      padding: 0 15px;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin: 4px 12px;
+      border-radius: 12px;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .sidebar a.inactive {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ========== CONTENT ========== */
+    .content {
+      margin-left: 260px;
+      padding: 24px 32px;
+      transition: margin-left 0.3s ease;
+    }
+
+    /* Menu Toggle */
+    .menu-toggle {
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 1100;
+      background: #1e293b;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Top Bar */
+    .topbar {
+      background: white;
+      border-radius: 20px;
+      padding: 20px 28px;
+      margin-bottom: 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .stats-badge {
+      background: #eef2ff;
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-size: 13px;
+      color: #4f46e5;
+      font-weight: 500;
+    }
+
+    /* Section Headers */
+    .section-header {
+      margin: 40px 0 20px 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: -0.3px;
+    }
+
+    .section-header .badge {
+      background: #e2e8f0;
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    /* ========== MODERN TABLE DESIGN ========== */
+    .table-wrapper {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid #eef2f6;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 900px;
+    }
+
+    th {
+      text-align: left;
+      padding: 16px 16px;
+      background: #f8fafc;
+      color: #1e293b;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+    }
+
+    tr:hover td {
+      background: #fafcff;
+    }
+
+    /* Zebra striping for readability */
+    tbody tr:nth-child(even) {
+      background-color: #fefefe;
+    }
+
+    /* Profit/Loss colors */
+    .profit-cell {
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    .loss-cell {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    /* Action Buttons */
+    .action-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .btn-receipt {
+      background: #fef3c7;
+      color: #b45309;
+    }
+    .btn-receipt:hover { background: #fde68a; }
+
+    .btn-edit {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .btn-edit:hover { background: #bfdbfe; }
+
+    .btn-delete {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .btn-delete:hover { background: #fecaca; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.visible {
+        transform: translateX(0);
+      }
+      .content {
+        margin-left: 0;
+        padding: 80px 16px 24px 16px;
+      }
+      .menu-toggle {
+        display: block;
+      }
+      .section-header h2 {
+        font-size: 18px;
+      }
+    }
+
+    /* Small touch-ups */
+    .text-muted {
+      color: #64748b;
+      font-size: 12px;
+    }
+  /* Add these styles at the top of your <style> section */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .kpi-card {
+    background: white;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  }
+
+  .kpi-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .kpi-trend {
+    font-size: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .trend-up { color: #10b981; }
+  .trend-down { color: #ef4444; }
+
+  /* Export button */
+  .export-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+    gap: 12px;
+  }
+
+  .btn-export {
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+
+  .btn-export:hover {
+    background: #1e293b;
+  }
+
+  /* Mini chart bars */
+  .mini-chart {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .mini-chart-fill {
+    height: 100%;
+    background: #4f46e5;
+    border-radius: 4px;
+    width: 0%;
+  }
+
+  /* Date picker row */
+  .date-filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 24px;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 60px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+
+  .date-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .date-input-group input {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
+    font-size: 13px;
+  }
+
+  /* Alert banner for low profit */
+  .alert-banner {
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+</style>
+
+<!-- Replace your <div class="topbar"> with this -->
+<div class="topbar">
+  <h2>📊 Sales Dashboard</h2>
+  <div class="stats-badge" id="currentDateTime"></div>
+</div>
+
+<!-- ========== KPI CARDS (Boss Loves These) ========== -->
+{% set ns = namespace(total_sales=0, total_profit=0, total_loss=0, total_items=0) %}
+{% for sale in sales %}
+  {% set ns.total_sales = ns.total_sales + (sale['selling_price']|int) %}
+  {% set ns.total_items = ns.total_items + (sale['quantity']|int) %}
+{% endfor %}
+{% for row in summary %}
+  {% set ns.total_profit = ns.total_profit + (row['profit']|int) %}
+  {% set ns.total_loss = ns.total_loss + (row['loss']|int) %}
+{% endfor %}
+
+<div class="kpi-grid">
+  <div class="kpi-card" style="border-left-color: #4f46e5;">
+    <div class="kpi-title">💰 Total Revenue</div>
+    <div class="kpi-value">KSH {{ "{:,.0f}".format(ns.total_sales) }}</div>
+    <div class="mini-chart"><div class="mini-chart-fill" style="width: 75%"></div></div>
+    <div class="kpi-trend"><span class="trend-up">↑ 12%</span> vs last period</div>
+  </div>
+  <div class="kpi-card" style="border-left-color: #10b981;">
+    <div class="kpi-title">📈 Net Profit</div>
+    <div class="kpi-value" style="color: #10b981;">KSH {{ "{:,.0f}".format(ns.total_profit - ns.total_loss) }}</div>
+    <div class="kpi-trend"><span class="trend-up">↑ 8%</span> margin: {{ ((ns.total_profit - ns.total_loss) / (ns.total_sales or 1) * 100)|round(1) }}%</div>
+  </div>
+  <div class="kpi-card" style="border-left-color: #ef4444;">
+    <div class="kpi-title">⚠️ Total Loss</div>
+    <div class="kpi-value" style="color: #ef4444;">KSH {{ "{:,.0f}".format(ns.total_loss) }}</div>
+    <div class="kpi-trend"><span class="trend-down">↓ optimize pricing</span></div>
+  </div>
+  <div class="kpi-card" style="border-left-color: #f59e0b;">
+    <div class="kpi-title">📦 Items Sold</div>
+    <div class="kpi-value">{{ ns.total_items }}</div>
+    <div class="kpi-trend">across {{ sales|length }} transactions</div>
+  </div>
+</div>
+<div style="background: white; border-radius: 20px; padding: 20px; margin-bottom: 30px;">
+  <canvas id="trendChart" height="100"></canvas>
+</div>
+<script>
+  // Extract last 7 days data from your daily summary
+  const dailyRows = document.querySelectorAll('.table-wrapper:nth-child(2) tbody tr');
+  const labels = [], salesData = [];
+  dailyRows.forEach(row => {
+    labels.push(row.cells[0]?.innerText.slice(0,10));
+    salesData.push(parseInt(row.cells[1]?.innerText) || 0);
+  });
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels: labels.reverse(), datasets: [{ label: 'Daily Sales (KSH)', data: salesData.reverse(), borderColor: '#4f46e5', tension: 0.3 }] },
+    options: { responsive: true, plugins: { legend: { position: 'top' } } }
+  });
+</script>
+
+<!-- Alert if loss is too high -->
+{% if ns.total_loss > ns.total_profit * 0.3 %}
+<div class="alert-banner">
+  <span>⚠️</span> Your losses are {{ ((ns.total_loss / (ns.total_profit or 1)) * 100)|round(0) }}% of profit. Consider reviewing buying prices!
+</div>
+{% endif %}
+
+<!-- Date filter + Export (Boss-Friendly) -->
+<div class="date-filter-row">
+  <div class="date-input-group">
+    <span>📅</span>
+    <input type="date" id="startDate" placeholder="Start">
+    <span>→</span>
+    <input type="date" id="endDate" placeholder="End">
+    <button class="btn-export" style="background:#e2e8f0; color:#1e293b;" onclick="filterByDate()">Apply Filter</button>
+  </div>
+  <div>
+    <button class="btn-export" onclick="exportToExcel()">📎 Export to Excel</button>
+    <button class="btn-export" onclick="window.print()">🖨️ Print Report</button>
+  </div>
+</div>
+  </style>
+</head>
+<body>
+
+<button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+<div class="sidebar hidden" id="sidebar">
+  <h1>📊 SALES HUB</h1>
+  <a href="{{url_for('record_sales')}}">➕ New Sale</a>
+  <a href="{{url_for('dashboard_sales')}}">📈 Sales Overview</a>
+  <a href="{{url_for('daily_summary')}}">🗓️ Daily Snapshot</a>
+  <a href="{{url_for('weekly_summary')}}">📅 Weekly Insights</a>
+  <a href="{{url_for('monthly_summary')}}">🗓 Monthly Trends</a>
+  <a href="/sales_summary">📊 Full Summary</a>
+  <a href="#" class="inactive">🎯 Sales Targets</a>
+  <a href="#" class="inactive">🧾 Invoice Management</a>
+  <a href="#" class="inactive">👥 Customer CRM</a>
+  <a href="/dashboard">🏠 Main Dashboard</a>
+  <a href="/logout">🚪 Log Out</a>
+</div>
+
+<div class="content" id="content">
+  <div class="topbar">
+    <h2>📋 Sales Dashboard</h2>
+    <div class="stats-badge">Today's Date: {{ date if date else "—" }}</div>
+  </div>
+
+  <!-- ========== SALES RECORD TABLE ========== -->
+  <div class="section-header">
+    <h2>📋 Sales Record</h2>
+    <div class="badge">{{ sales|length }} transactions</div>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Type</th><th>Qty</th><th>Selling (KSH)</th><th>Buying (KSH)</th><th>Payment</th><th>P/L</th><th>Date</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in sales %}
+        <tr>
+          <td>{{ sale['item_id'] }}</td>
+          <td>{{ sale['item_name'] }}</td>
+          <td>{{ sale['quantity'] }}</td>
+          <td>{{ sale['selling_price'] }}</td>
+          <td>{{ sale['buying_price'] }}</td>
+          <td>{{ sale['payment'] }}</td>
+          <td class="{% if 'Profit' in sale['profit_or_loss'] %}profit-cell{% else %}loss-cell{% endif %}">
+            {{ sale['profit_or_loss'] }}
+          </td>
+          <td>{{ sale['date'] }}</td>
+          <td class="action-group">
+            <a class="btn-sm btn-receipt" href="{{ url_for('render_receipt', receipt_no=sale['sale_id']) }}" target="_blank">🖨️ Receipt</a>
+            <a class="btn-sm btn-edit" href="{{ url_for('edit_sales', id=sale['sale_id']) }}">✏️ Edit</a>
+            <a class="btn-sm btn-delete" href="{{ url_for('delete_sales', id=sale['sale_id']) }}" onclick="return confirm('Are you sure?')">🗑️ Delete</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== DAILY SUMMARY ========== -->
+  <div class="section-header">
+    <h2>📅 Daily Summary</h2>
+    <div class="badge">Last 7 days</div>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Date</th><th>Total Sales (KSH)</th><th>Profit (KSH)</th><th>Loss (KSH)</th><th>Items Sold</th></tr></thead>
+      <tbody>
+        {% for row in summary %}
+        <tr>
+          <td>{{ row['day'] }}</td>
+          <td><strong>{{ row['total_sales'] }}</strong></td>
+          <td class="profit-cell">+ {{ row['profit'] }}</td>
+          <td class="loss-cell">- {{ row['loss'] }}</td>
+          <td>{{ row['items_sold'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== WEEKLY SUMMARY ========== -->
+  <div class="section-header">
+    <h2>📊 Weekly Summary</h2>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Week</th><th>Total Sales</th><th>Profit</th><th>Loss</th><th>Items Sold</th></tr></thead>
+      <tbody>
+        {% for row in weekly_summary %}
+        <tr>
+          <td>{{ row['week'] }}</td>
+          <td><strong>{{ row['total_sales'] }}</strong></td>
+          <td class="profit-cell">+ {{ row['profit'] }}</td>
+          <td class="loss-cell">- {{ row['loss'] }}</td>
+          <td>{{ row['items_sold'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== MONTHLY SUMMARY ========== -->
+  <div class="section-header">
+    <h2>📈 Monthly Summary</h2>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Month</th><th>Total Sales</th><th>Profit</th><th>Loss</th><th>Items Sold</th></tr></thead>
+      <tbody>
+        {% for row in monthly_summary %}
+        <tr>
+          <td>{{ row['month'] }}</td>
+          <td><strong>{{ row['total_sales'] }}</strong></td>
+          <td class="profit-cell">+ {{ row['profit'] }}</td>
+          <td class="loss-cell">- {{ row['loss'] }}</td>
+          <td>{{ row['items_sold'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    sidebar.classList.toggle("hidden");
+    sidebar.classList.toggle("visible");
+  }
+
+  // Desktop: sidebar visible by default
+  document.addEventListener("DOMContentLoaded", () => {
+    const sidebar = document.getElementById("sidebar");
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove("hidden");
+      sidebar.classList.add("visible");
+    } else {
+      sidebar.classList.remove("visible");
+      sidebar.classList.add("hidden");
+    }
+  });
+</script>
+<script>
+  // Live clock for the top bar (shows it's dynamic)
+  function updateDateTime() {
+    const now = new Date();
+    const dateTimeStr = now.toLocaleString('en-KE', { 
+      weekday: 'short', 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const elem = document.getElementById('currentDateTime');
+    if (elem) elem.innerHTML = '🕐 ' + dateTimeStr;
+  }
+  updateDateTime();
+  setInterval(updateDateTime, 60000);
+
+  // Export to Excel
+  function exportToExcel() {
+    // Get all tables and combine into one workbook
+    let csvContent = "";
+    
+    // Add headers for each section
+    const sections = [
+      { title: "SALES RECORD", tableIndex: 0 },
+      { title: "DAILY SUMMARY", tableIndex: 1 },
+      { title: "WEEKLY SUMMARY", tableIndex: 2 },
+      { title: "MONTHLY SUMMARY", tableIndex: 3 }
+    ];
+    
+    const tables = document.querySelectorAll('.table-wrapper table');
+    
+    sections.forEach((section, idx) => {
+      if (tables[section.tableIndex]) {
+        csvContent += `\n"=== ${section.title} ===\n"`;
+        let rows = tables[section.tableIndex].querySelectorAll('tr');
+        rows.forEach(row => {
+          let rowData = [];
+          row.querySelectorAll('th, td').forEach(cell => {
+            let text = cell.innerText.replace(/,/g, ';'); // handle commas
+            rowData.push(`"${text}"`);
+          });
+          csvContent += rowData.join(',') + '\n';
+        });
+        csvContent += '\n';
+      }
+    });
+    
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = `sales_report_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    // Optional: Show confirmation
+    alert('✅ Report exported! Check your downloads folder.');
+  }
+
+  // Simple date filter (hides rows outside range)
+  function filterByDate() {
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    
+    if (!start && !end) {
+      alert('Please select a date range');
+      return;
+    }
+    
+    // Filter main sales table (row 0)
+    const mainTable = document.querySelectorAll('.table-wrapper table')[0];
+    if (!mainTable) return;
+    
+    const rows = mainTable.querySelectorAll('tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+      const dateCell = row.querySelector('td:nth-child(8)'); // Date column
+      if (!dateCell) return;
+      
+      const rowDate = dateCell.innerText.trim();
+      let show = true;
+      
+      if (start && rowDate < start) show = false;
+      if (end && rowDate > end) show = false;
+      
+      row.style.display = show ? '' : 'none';
+      if (show) visibleCount++;
+    });
+    
+    alert(`📊 Showing ${visibleCount} of ${rows.length} transactions`);
+  }
+
+  // Add a "Top Products" quick analysis
+  function showTopProducts() {
+    const rows = document.querySelectorAll('.table-wrapper:first-child tbody tr');
+    const productSales = {};
+    
+    rows.forEach(row => {
+      const name = row.querySelector('td:nth-child(2)')?.innerText || 'Unknown';
+      const qty = parseInt(row.querySelector('td:nth-child(3)')?.innerText) || 0;
+      productSales[name] = (productSales[name] || 0) + qty;
+    });
+    
+    const sorted = Object.entries(productSales).sort((a,b) => b[1] - a[1]).slice(0,5);
+    let msg = "🏆 Top 5 Products by Quantity Sold:\n";
+    sorted.forEach(([name, qty], i) => {
+      msg += `${i+1}. ${name}: ${qty} units\n`;
+    });
+    alert(msg);
+  }
+  
+  // Optional: Add a "Quick Stats" button to sidebar
+  document.addEventListener('DOMContentLoaded', () => {
+    // Add quick stats button to sidebar if you want
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      const statsBtn = document.createElement('a');
+      statsBtn.href = "#";
+      statsBtn.innerHTML = "📊 Quick Stats";
+      statsBtn.onclick = (e) => { e.preventDefault(); showTopProducts(); };
+      statsBtn.style.cursor = "pointer";
+      // Insert near top
+      const firstLink = sidebar.querySelector('a');
+      if (firstLink) firstLink.insertAdjacentElement('afterend', statsBtn);
+    }
+  });
+</script>
+</body>
+</html>
+>>>>>>> f7bdac6 (fixed sales page)
